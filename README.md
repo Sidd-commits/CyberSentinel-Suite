@@ -133,7 +133,7 @@ Additional details are available in the [Phishing README](Mini-Project/Phishing/
 
 ## Project Structure
 
-```
+
 CyberSentinel-Suite/
 └── Mini-Project/
     ├── start_all_projects.bat
@@ -143,7 +143,7 @@ CyberSentinel-Suite/
     │   └── ransomware-simulator/       # RansomWatch (Flask + React)
     ├── Phishing/                       # Phishing URL detector
     └── logs/                           # Shared URL logs (Phishing module)
-```
+
 
 ## Learning Objectives
 
