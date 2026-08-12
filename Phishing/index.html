@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phishing URL Checker</title>
+  <style>
+    :root {
+      --bg: #0a1220;
+      --panel: #111e33;
+      --panel2: #172843;
+      --border: #27446d;
+      --text: #e2e8f0;
+      --muted: #8ba3c4;
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at top right, #17375e 0%, var(--bg) 45%);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    .card {
+      background: rgba(17, 30, 51, 0.96);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    h1 { margin: 0 0 8px; font-size: 1.4rem; color: var(--blue); }
+    .muted { color: var(--muted); font-size: 0.92rem; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      flex: 1;
+      min-width: 220px;
+    }
+    input:focus { border-color: var(--blue); }
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .primary { background: var(--blue); color: #fff; }
+    .secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+    .status { font-size: 13px; font-weight: 600; }
+    .online { color: var(--green); }
+    .offline { color: var(--red); }
+    .pill {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .safe { background: rgba(34, 197, 94, 0.16); color: #86efac; border: 1px solid #166534; }
+    .suspicious { background: rgba(245, 158, 11, 0.18); color: #fde68a; border: 1px solid #92400e; }
+    .phishing { background: rgba(239, 68, 68, 0.18); color: #fecaca; border: 1px solid #991b1b; }
+    ul { margin: 8px 0 0; padding-left: 20px; }
+    li { margin-bottom: 4px; color: #cdd8ea; font-size: 0.9rem; }
+    .mono {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      color: #93c5fd;
+      background: #0a1629;
+      border: 1px solid #1f3558;
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 8px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Phishing URL Checker (Direct HTML)</h1>
+      <div class="muted">Open this file directly, keep backend running on <b>http://127.0.0.1:5000</b>.</div>
+      <div class="row" style="margin-top: 10px;">
+        <div id="apiStatus" class="status offline">Checking backend...</div>
+        <button class="secondary" id="refreshBtn">Refresh Status</button>
+        <button class="secondary" id="openDashBtn">Open Dashboard</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="muted" style="margin-bottom: 8px;">Check a URL</div>
+      <div class="row">
+        <input id="urlInput" type="text" placeholder="https://example.com" />
+        <button class="primary" id="checkBtn">Analyze</button>
+      </div>
+      <div id="resultWrap" style="display:none; margin-top: 12px;">
+        <div class="row">
+          <span id="resultBadge" class="pill">status</span>
+          <span id="resultScore" class="muted"></span>
+        </div>
+        <div id="resultUrl" class="mono"></div>
+        <ul id="resultReasons"></ul>
+        <div id="vtInfo" class="muted" style="margin-top: 8px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="muted" style="margin-bottom: 8px;">VirusTotal API key (saved once in backend)</div>
+      <div class="row">
+        <input id="apiKeyInput" type="password" placeholder="Paste API key once" />
+        <button class="primary" id="saveKeyBtn">Save Key</button>
+      </div>
+      <div id="keyStatus" class="muted" style="margin-top: 8px;">Not checked yet.</div>
+    </div>
+  </div>
+
+  <script src="standalone.js"></script>
+</body>
+</html>
