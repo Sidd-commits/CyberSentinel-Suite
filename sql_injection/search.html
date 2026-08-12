@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NexaBank — Account Search</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#c9a84c;--gold-light:#e8c97a;--dark:#0a0d12;--panel:#11151d;--panel2:#0e1219;--border:#1e2535;--text:#d4dbe8;--muted:#5a6880;--danger:#e05252;--success:#4caf7d;--info:#5aa8e0;--secure:#00e887}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4}
+nav{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:16px 48px;border-bottom:1px solid var(--border);background:rgba(10,13,18,.92);backdrop-filter:blur(12px)}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:1.5rem;color:var(--gold)}
+.nav-links{display:flex;gap:28px;font-size:.88rem}
+.nav-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--gold)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.mode-toggle{display:flex;align-items:center;gap:8px;font-size:.75rem;font-family:'Share Tech Mono',monospace}
+.toggle-track{width:40px;height:20px;background:rgba(224,82,82,.3);border:1px solid var(--danger);border-radius:10px;position:relative;cursor:pointer;transition:all .3s}
+.toggle-track.on{background:rgba(0,232,135,.2);border-color:var(--secure)}
+.toggle-thumb{width:14px;height:14px;border-radius:50%;background:var(--danger);position:absolute;top:2px;left:2px;transition:all .3s}
+.toggle-track.on .toggle-thumb{left:22px;background:var(--secure)}
+.mode-label{color:var(--danger);transition:color .3s}
+.mode-label.on{color:var(--secure)}
+.monitor-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);text-decoration:none;padding:5px 12px;border-radius:20px;font-size:.75rem}
+.monitor-btn:hover{background:rgba(201,168,76,.15)}
+.mdot{width:6px;height:6px;background:var(--danger);border-radius:50%;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+main{flex:1;padding:40px 48px;position:relative;z-index:1;max-width:1100px;margin:0 auto;width:100%}
+h1{font-family:'DM Serif Display',serif;font-size:2rem;color:var(--gold-light);margin-bottom:4px}
+.page-sub{color:var(--muted);font-size:.9rem;margin-bottom:24px}
+.vuln-badge{display:flex;align-items:center;gap:8px;background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.2);border-radius:6px;padding:8px 14px;margin-bottom:16px;font-size:.75rem;color:var(--danger);transition:all .3s}
+.vuln-badge.secure-mode{background:rgba(0,232,135,.07);border-color:rgba(0,232,135,.25);color:var(--secure)}
+.search-bar{display:flex;gap:12px;margin-bottom:16px;align-items:flex-end}
+.search-group{flex:1}
+label{display:block;font-size:.75rem;font-weight:500;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+input[type=text],select{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.92rem;outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.1)}
+input.sqli-detected{border-color:var(--danger);box-shadow:0 0 0 3px rgba(224,82,82,.12)}
+select option{background:var(--panel)}
+.btn{padding:10px 24px;background:linear-gradient(135deg,var(--gold),#a87c2a);border:none;border-radius:6px;color:#0a0d12;font-weight:600;font-size:.9rem;cursor:pointer;transition:opacity .2s;white-space:nowrap;align-self:flex-end}
+.btn:hover{opacity:.88}
+.sql-lbl{font-size:.68rem;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;font-family:'DM Sans',sans-serif}
+.sql-preview{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--info);word-break:break-all;transition:border-color .3s,color .3s;min-height:36px}
+.sql-preview.danger{border-color:rgba(224,82,82,.4);color:var(--danger)}
+.sql-preview.secure{border-color:rgba(0,232,135,.3);color:var(--secure)}
+.classifier-row{padding:8px 14px;font-family:'Share Tech Mono',monospace;font-size:.72rem;border-radius:4px;display:none;margin-bottom:12px;border:1px solid;animation:slideD .3s ease}
+@keyframes slideD{from{opacity:0;transform:translateY(-4px)}}
+.results-panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.results-header{padding:12px 18px;border-bottom:1px solid var(--border);font-size:.85rem;font-weight:600;color:var(--gold);display:flex;justify-content:space-between;align-items:center}
+.count-badge{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:2px 10px;font-size:.72rem;color:var(--gold)}
+table{width:100%;border-collapse:collapse}
+th{background:rgba(0,0,0,.3);padding:9px 14px;text-align:left;font-size:.72rem;font-weight:500;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+td{padding:11px 14px;border-bottom:1px solid rgba(30,37,53,.6);font-size:.86rem;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,168,76,.03)}
+.role-badge{padding:2px 8px;border-radius:3px;font-size:.7rem;font-weight:600}
+.role-badge.admin{background:rgba(224,82,82,.15);color:var(--danger);border:1px solid rgba(224,82,82,.25)}
+.role-badge.user{background:rgba(90,168,224,.12);color:var(--info);border:1px solid rgba(90,168,224,.2)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .ico{font-size:2rem;margin-bottom:8px;opacity:.4}
+@keyframes flashRed{0%{background:rgba(224,82,82,.25)}100%{background:transparent}}
+tr.attack-flash td{animation:flashRed 1.5s ease}
+footer{position:relative;z-index:1;text-align:center;padding:14px;font-size:.75rem;color:var(--muted);border-top:1px solid var(--border)}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-logo">NexaBank</div>
+  <div class="nav-links">
+    <a href="index.html">Login</a>
+    <a href="search.html" class="active">Account Search</a>
+    <a href="profile.html">Profile</a>
+  </div>
+  <div class="nav-right">
+    <div class="mode-toggle" onclick="toggleMode()">
+      <div class="toggle-track" id="toggleTrack"><div class="toggle-thumb"></div></div>
+      <span class="mode-label" id="modeLabel">VULNERABLE</span>
+    </div>
+    <a class="monitor-btn" href="dashboard.html" target="_blank"><span class="mdot"></span>Live Monitor</a>
+  </div>
+</nav>
+<main>
+  <h1>Account Search</h1>
+  <p class="page-sub">Search customer accounts by name or ID</p>
+  <div class="vuln-badge" id="vulnBadge">⚠ <span id="badgeText"><b>VULNERABLE:</b> Search param injected directly into SQL</span></div>
+  <div class="search-bar">
+    <div class="search-group">
+      <label>Search Term</label>
+      <input type="text" id="searchInput" placeholder="e.g. john  or try: ' UNION SELECT..." autocomplete="off" oninput="updatePreview()">
+    </div>
+    <div class="search-group" style="max-width:160px">
+      <label>Search By</label>
+      <select id="searchBy" onchange="updatePreview()">
+        <option value="username">Username</option>
+        <option value="id">Account ID</option>
+      </select>
+    </div>
+    <button class="btn" onclick="doSearch()">Search</button>
+  </div>
+  <div class="sql-lbl">Generated SQL Query (live)</div>
+  <div class="sql-preview" id="sqlPreview">SELECT id, username, role, balance FROM users WHERE username LIKE '%...%'</div>
+  <div class="classifier-row" id="classRow"></div>
+  <div class="results-panel">
+    <div class="results-header">Search Results <span class="count-badge" id="countBadge">0 records</span></div>
+    <div id="resultsBody"><div class="empty-state"><div class="ico">⬡</div>Enter a search term</div></div>
+  </div>
+</main>
+<footer>NexaBank Demo Lab — Security Education Only</footer>
+<script src="nexabridge.js"></script>
+<script>
+const DB=[
+  {id:1,username:'admin',   email:'admin@nexabank.com', role:'administrator',balance:'$84,220',joined:'2019-03-01'},
+  {id:2,username:'john_doe',email:'john@example.com',   role:'user',         balance:'$12,450',joined:'2021-06-15'},
+  {id:3,username:'alice',   email:'alice@example.com',  role:'user',         balance:'$5,830', joined:'2022-01-10'},
+  {id:4,username:'bob',     email:'bob@securemail.com', role:'user',         balance:'$31,900',joined:'2020-09-22'},
+  {id:5,username:'charlie', email:'charlie@example.com',role:'user',         balance:'$8,100', joined:'2023-02-14'},
+];
+let secureMode=false;
+
+function toggleMode(){
+  secureMode=!secureMode; _setSecureMode(secureMode);
+  document.getElementById('toggleTrack').classList.toggle('on',secureMode);
+  document.getElementById('modeLabel').classList.toggle('on',secureMode);
+  document.getElementById('modeLabel').textContent=secureMode?'SECURE':'VULNERABLE';
+  document.getElementById('vulnBadge').classList.toggle('secure-mode',secureMode);
+  document.getElementById('badgeText').innerHTML=secureMode
+    ?'<b>SECURE MODE:</b> Parameterized query — injection has no effect'
+    :'<b>VULNERABLE:</b> Search param injected directly into SQL';
+  updatePreview();
+}
+function updatePreview(){
+  const t=document.getElementById('searchInput').value;
+  const by=document.getElementById('searchBy').value;
+  const hits=_detectSQLi(t);
+  const isAtk=hits.length>0&&!secureMode;
+  document.getElementById('searchInput').classList.toggle('sqli-detected',isAtk);
+  const sql=_buildSQL_search(t,by);
+  const p=document.getElementById('sqlPreview');
+  p.textContent=sql;
+  p.className='sql-preview'+(secureMode?' secure':isAtk?' danger':'');
+}
+function doSearch(){
+  const term=document.getElementById('searchInput').value.trim();
+  const by=document.getElementById('searchBy').value;
+  const hits=_detectSQLi(term);
+  const isAtk=hits.length>0&&!secureMode;
+  const ip=_randomIP(isAtk);
+  const classifier=isAtk?_classifyAttack(term):null;
+  const payload=_buildSQL_search(term,by);
+  _broadcast({type:'query',page:'Account Search',endpoint:'/search',username:term,password:'',payload,patterns:isAtk?hits:[],ip,secureMode,attackType:classifier?.type||null,attackColor:classifier?.color||null});
+
+  const cr=document.getElementById('classRow');
+  if(classifier&&isAtk){
+    cr.style.display='block';cr.style.borderColor=classifier.color;
+    cr.style.color=classifier.color;cr.style.background=classifier.color+'18';
+    cr.textContent='🔍 AI Classifier: '+classifier.type;
+  } else cr.style.display='none';
+
+  let results=[];
+  if(!secureMode){
+    const unionMatch=/UNION\s+SELECT/i.test(term);
+    const orBypass=/'\s*OR\s*'1'\s*=\s*'1|'\s*or\s+\d+=\d+/i.test(term);
+    const commentByp=/'.*--/i.test(term);
+    if(unionMatch||orBypass||commentByp) results=[...DB];
+    else if(by==='id') results=DB.filter(u=>u.id===parseInt(term));
+    else results=DB.filter(u=>u.username.toLowerCase().includes(term.toLowerCase()));
+  } else {
+    if(by==='id') results=DB.filter(u=>u.id===parseInt(term));
+    else results=DB.filter(u=>u.username.toLowerCase().includes(term.toLowerCase()));
+  }
+  renderResults(results,isAtk);
+}
+function renderResults(rows,isAtk){
+  document.getElementById('countBadge').textContent=rows.length+' record'+(rows.length!==1?'s':'');
+  const body=document.getElementById('resultsBody');
+  if(!rows.length){body.innerHTML='<div class="empty-state"><div class="ico">⊘</div>No records found</div>';return;}
+  body.innerHTML=`<table><thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Balance</th><th>Joined</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="${isAtk?'attack-flash':''}">
+      <td style="font-family:monospace;color:var(--muted)">${r.id}</td>
+      <td><b>${esc(r.username)}</b></td>
+      <td style="color:var(--muted)">${r.email}</td>
+      <td><span class="role-badge ${r.role==='administrator'?'admin':'user'}">${r.role}</span></td>
+      <td style="color:var(--success)">${r.balance}</td>
+      <td style="color:var(--muted)">${r.joined}</td>
+    </tr>`).join('')}
+  </tbody></table>
+  ${isAtk?`<div style="padding:8px 14px;font-size:.75rem;color:var(--danger);background:rgba(224,82,82,.06);border-top:1px solid rgba(224,82,82,.12)">⚠ Attack detected — logged to dashboard.${rows.length===DB.length?' <b>Full DB dump!</b>':''}</div>`:''}`;
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch()});
+</script>
+</body>
+</html>
