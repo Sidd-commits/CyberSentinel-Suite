@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NetShield — DoS/DDoS Simulation Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet"/>
+</head>
+<body>
+  <!-- Scanline overlay -->
+  <div class="scanline"></div>
+  <div class="noise"></div>
+
+  <header class="topbar">
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">NET<span class="accent">SHIELD</span></span>
+    </div>
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="dot" id="statusDot"></span>
+        <span id="systemStatus">MONITORING</span>
+      </div>
+      <div class="status-item">SYS TIME: <span id="clock">--:--:--</span></div>
+      <div class="status-item">NODE: <span class="accent">192.168.1.1</span></div>
+    </div>
+    <div class="header-controls">
+      <button class="btn btn-ghost" onclick="resetAll()">RESET</button>
+      <button class="btn btn-danger" onclick="toggleAttack('dos')" id="dosBtn">▶ LAUNCH DoS</button>
+      <button class="btn btn-warning" onclick="toggleAttack('ddos')" id="ddosBtn">▶ LAUNCH DDoS</button>
+    </div>
+  </header>
+
+  <main class="dashboard">
+
+    <!-- ─── LEFT PANEL ─── -->
+    <aside class="panel panel-left">
+      <section class="card">
+        <div class="card-header">ATTACK CONFIGURATION</div>
+        <div class="config-grid">
+          <label>Attack Type</label>
+          <select id="attackType" class="ctrl-select">
+            <option value="syn">SYN Flood</option>
+            <option value="udp">UDP Flood</option>
+            <option value="http">HTTP Flood</option>
+            <option value="icmp">ICMP Ping Flood</option>
+            <option value="slowloris">Slowloris</option>
+          </select>
+
+          <label>Packet Rate (pps)</label>
+          <input type="range" id="packetRate" min="100" max="10000" value="1000" class="ctrl-range" oninput="updateRateLabel(this.value)"/>
+          <div class="range-val"><span id="rateLabel">1000</span> pps</div>
+
+          <label>Botnet Size (DDoS)</label>
+          <input type="range" id="botnetSize" min="1" max="500" value="50" class="ctrl-range" oninput="updateBotLabel(this.value)"/>
+          <div class="range-val"><span id="botLabel">50</span> nodes</div>
+
+          <label>Target Port</label>
+          <input type="text" id="targetPort" value="80" class="ctrl-input" placeholder="80"/>
+
+          <label>Payload Size (bytes)</label>
+          <input type="range" id="payloadSize" min="64" max="65535" value="512" class="ctrl-range" oninput="updatePayloadLabel(this.value)"/>
+          <div class="range-val"><span id="payloadLabel">512</span> B</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">DEFENSE MECHANISMS</div>
+        <div class="defense-toggles">
+          <label class="toggle-row">
+            <span>Rate Limiting</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="defRateLimit" checked onchange="updateDefense()"/>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <span>IP Blacklisting</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="defBlacklist" checked onchange="updateDefense()"/>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <span>SYN Cookies</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="defSynCookie" onchange="updateDefense()"/>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <span>Traffic Scrubbing</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="defScrubbing" onchange="updateDefense()"/>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <span>Geo Blocking</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="defGeoBlock" onchange="updateDefense()"/>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <span>CAPTCHA Challenge</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="defCaptcha" onchange="updateDefense()"/>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+          <label class="toggle-row">
+            <span>Anycast Diffusion</span>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="defAnycast" onchange="updateDefense()"/>
+              <span class="toggle-slider"></span>
+            </div>
+          </label>
+        </div>
+        <div class="defense-score-wrap">
+          <div class="defense-label">Defense Strength</div>
+          <div class="defense-bar-outer">
+            <div class="defense-bar-inner" id="defenseBar"></div>
+          </div>
+          <div class="defense-pct" id="defensePct">29%</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">ATTACK ORIGIN MAP</div>
+        <div class="map-container" id="mapContainer">
+          <canvas id="mapCanvas" width="280" height="160"></canvas>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ─── CENTER PANEL ─── -->
+    <section class="panel panel-center">
+      <div class="metrics-row">
+        <div class="metric-card" id="mcTraffic">
+          <div class="metric-label">INCOMING TRAFFIC</div>
+          <div class="metric-value" id="mvTraffic">0 <span class="unit">Mbps</span></div>
+          <div class="metric-bar"><div id="barTraffic" class="bar-fill"></div></div>
+        </div>
+        <div class="metric-card" id="mcPackets">
+          <div class="metric-label">PACKETS/SEC</div>
+          <div class="metric-value" id="mvPackets">0 <span class="unit">pps</span></div>
+          <div class="metric-bar"><div id="barPackets" class="bar-fill"></div></div>
+        </div>
+        <div class="metric-card" id="mcBlocked">
+          <div class="metric-label">PACKETS BLOCKED</div>
+          <div class="metric-value" id="mvBlocked">0 <span class="unit">%</span></div>
+          <div class="metric-bar bar-green"><div id="barBlocked" class="bar-fill green"></div></div>
+        </div>
+        <div class="metric-card" id="mcLatency">
+          <div class="metric-label">SERVER LATENCY</div>
+          <div class="metric-value" id="mvLatency">12 <span class="unit">ms</span></div>
+          <div class="metric-bar"><div id="barLatency" class="bar-fill orange"></div></div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="card chart-card">
+          <div class="card-header">
+            REAL-TIME TRAFFIC ANALYSIS
+            <span class="legend">
+              <span class="leg leg-attack">▬ Attack</span>
+              <span class="leg leg-legit">▬ Legitimate</span>
+              <span class="leg leg-blocked">▬ Blocked</span>
+            </span>
+          </div>
+          <canvas id="trafficChart" width="700" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="card chart-card half">
+          <div class="card-header">PACKET TYPE DISTRIBUTION</div>
+          <canvas id="pieChart" width="260" height="200"></canvas>
+        </div>
+        <div class="card chart-card half">
+          <div class="card-header">SERVER RESOURCE USAGE</div>
+          <canvas id="resourceChart" width="320" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <div class="card chart-card">
+          <div class="card-header">BLOCKED IP HEATMAP <span class="badge" id="blockedCount">0 IPs</span></div>
+          <div class="ip-heatmap" id="ipHeatmap"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── RIGHT PANEL ─── -->
+    <aside class="panel panel-right">
+      <section class="card">
+        <div class="card-header">THREAT INTELLIGENCE</div>
+        <div class="threat-level-wrap">
+          <div class="threat-ring" id="threatRing">
+            <div class="threat-inner">
+              <div class="threat-value" id="threatValue">LOW</div>
+              <div class="threat-sub">THREAT</div>
+            </div>
+          </div>
+          <div class="threat-stats">
+            <div class="tstat"><span>Attack Vector</span><span id="tiVector">—</span></div>
+            <div class="tstat"><span>Bandwidth</span><span id="tiBandwidth">0 Mbps</span></div>
+            <div class="tstat"><span>Unique Sources</span><span id="tiSources">0</span></div>
+            <div class="tstat"><span>Duration</span><span id="tiDuration">0s</span></div>
+            <div class="tstat"><span>Confidence</span><span id="tiConfidence">—</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">LIVE EVENT LOG</div>
+        <div class="log-container" id="logContainer"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">MITIGATION ACTIONS</div>
+        <div class="mitigation-list" id="mitigationList">
+          <div class="mit-item idle">Awaiting attack detection...</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">ATTACK STATISTICS</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="sb-val" id="statTotal">0</div><div class="sb-lbl">Total Attacks</div></div>
+          <div class="stat-box"><div class="sb-val green" id="statMitigated">0</div><div class="sb-lbl">Mitigated</div></div>
+          <div class="stat-box"><div class="sb-val red" id="statPenetrated">0</div><div class="sb-lbl">Penetrated</div></div>
+          <div class="stat-box"><div class="sb-val yellow" id="statOngoing">0</div><div class="sb-lbl">Ongoing</div></div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="simulation.js"></script>
+  <script src="charts.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
