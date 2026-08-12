@@ -8,32 +8,7 @@ This project is **strictly for educational purposes**. It simulates ransomware b
 
 ---
 
-## 📁 Project Structure
 
-```
-ransomware-simulator/
-├── backend/
-│   ├── app.py              ← Flask backend (attack engine + WebSocket)
-│   └── requirements.txt    ← Python dependencies
-└── frontend/
-    ├── package.json
-    ├── public/
-    │   └── index.html
-    └── src/
-        ├── App.jsx             ← Root component + socket setup
-        ├── App.css             ← Full dark cyberpunk theme
-        ├── index.js
-        └── components/
-            ├── AttackPanel.jsx     ← Variant selector + attack controls
-            ├── FileSystem.jsx      ← Visual file grid/list monitor
-            ├── MonitorPanel.jsx    ← Detection engine + threat gauge
-            ├── AlertFeed.jsx       ← Real-time alert feed
-            ├── ActivityLog.jsx     ← Timestamped event log
-            ├── RansomNote.jsx      ← Post-attack ransom note modal
-            └── StatsBar.jsx        ← Header stats bar
-```
-
----
 
 ## 🚀 STEP-BY-STEP SETUP GUIDE
 
