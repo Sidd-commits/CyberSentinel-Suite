@@ -1,7 +1,6 @@
-// ═══════════════════════════════════════════════════════════════
+
 //  NexaBank SQLi Lab — Shared Bridge (nexabridge.js)
 //  Include in index.html, search.html, profile.html
-// ═══════════════════════════════════════════════════════════════
 
 const _ch = new BroadcastChannel('sqli_monitor');
 
