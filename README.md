@@ -111,7 +111,7 @@ start.bat
 
 ```bat
 python app.py
-```
+
 
 Open [http://localhost:5000](http://localhost:5000) for the dashboard, or open `index.html` for the standalone UI (the backend must be running).
 
